@@ -664,3 +664,474 @@ Timeout
 // 1. Call Stack
 // 2. Microtask Queue (Promises)
 // 3. Callback Queue (setTimeout)
+
+
+// ===============================
+// 25. ASYNC / AWAIT BASICS
+// ===============================
+
+// async makes a function always return a Promise
+
+async function example1() {
+    return "Hello";
+}
+
+console.log(example1());
+// Output: Promise { "Hello" }
+
+
+
+// ===============================
+// 26. AWAIT KEYWORD
+// ===============================
+
+// await pauses execution inside async function
+// until the Promise resolves
+
+function getData() {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve("Data received");
+        }, 1000);
+    });
+}
+
+async function example2() {
+    const result = await getData();
+    console.log(result);
+}
+
+example2();
+// Output after 1 sec: Data received
+
+
+
+// ===============================
+// 27. AWAIT DOES NOT BLOCK JS
+// ===============================
+
+console.log("Start");
+
+async function example3() {
+    console.log("Inside");
+    await Promise.resolve();
+    console.log("After Await");
+}
+
+example3();
+
+console.log("End");
+
+// Output:
+// Start
+// Inside
+// End
+// After Await
+
+
+
+// ===============================
+// 28. ERROR HANDLING WITH TRY/CATCH
+// ===============================
+
+function getError() {
+    return new Promise((resolve, reject) => {
+        reject("Something went wrong");
+    });
+}
+
+async function example4() {
+    try {
+        const data = await getError();
+        console.log(data);
+    } catch (error) {
+        console.log("Caught:", error);
+    }
+}
+
+example4();
+// Output: Caught: Something went wrong
+
+🧠 Golden Rule
+await converts:
+Rejected Promise → Thrown Error
+Without await, it remains:
+Rejected Promise (no throwing)
+
+
+
+// ===============================
+// 29. SEQUENTIAL VS PARALLEL AWAIT
+// ===============================
+
+function task1() {
+    return new Promise(resolve => {
+        setTimeout(() => resolve("Task 1 Done"), 1000);
+    });
+}
+
+function task2() {
+    return new Promise(resolve => {
+        setTimeout(() => resolve("Task 2 Done"), 1000);
+    });
+}
+
+// ❌ Sequential (takes 2 seconds)
+async function sequential() {
+    const a = await task1();
+    const b = await task2();
+    console.log(a, b);
+}
+
+// ✅ Parallel (takes 1 second)
+async function parallel() {
+    const p1 = task1();
+    const p2 = task2();
+
+    const a = await p1;
+    const b = await p2;
+
+    console.log(a, b);
+}
+
+
+
+// ===============================
+// 30. ASYNC FUNCTION RETURN VALUE
+// ===============================
+
+async function example5() {
+    return 10;
+}
+
+example5().then(value => {
+    console.log(value);
+});
+
+// Output: 10
+
+💡 Trick To Read It Comfortably
+When you see:
+.then(value => {
+    console.log(value);
+});
+Mentally rewrite it as:
+
+.then(function(value) {
+    console.log(value);
+});
+Everything becomes clearer.
+
+// 
+  example5()        // returns Promise
+    .then(        // when resolved
+        value =>  // take resolved value
+        {
+            console.log(value);  // do this
+        }
+    );
+//
+
+    
+// ===============================
+// 31. THROW INSIDE ASYNC
+// ===============================
+
+async function example6() {
+    throw new Error("Failed");
+}
+
+example6().catch(error => {
+    console.log(error.message);
+});
+
+// Output: Failed
+
+🧠 Compare With Normal Function
+
+Normal function:
+function test() {
+    throw new Error("Failed");
+}
+test(); // ❌ crashes immediately
+
+Async function:
+async function test() {
+    throw new Error("Failed");
+}
+test(); // returns rejected Promise
+Big difference.
+
+    
+// ===============================
+// 32. Promise.all()
+// ===============================
+
+// Runs multiple promises in parallel
+// Resolves when ALL promises resolve
+// Rejects immediately if ANY promise rejects
+
+const p1 = Promise.resolve("A");
+const p2 = Promise.resolve("B");
+const p3 = Promise.resolve("C");
+
+Promise.all([p1, p2, p3])
+    .then(results => {
+        console.log(results);
+    })
+    .catch(error => {
+        console.log(error);
+    });
+
+// Output: ["A", "B", "C"]
+
+
+
+// If one fails:
+const p4 = Promise.reject("Error!");
+
+Promise.all([p1, p4, p3])
+    .then(results => console.log(results))
+    .catch(error => console.log(error));
+
+// Output: Error!
+
+
+
+// ===============================
+// 33. Promise.race()
+// ===============================
+
+// Resolves or rejects with the FIRST settled promise
+
+const fast = new Promise(resolve =>
+    setTimeout(() => resolve("Fast"), 500)
+);
+
+const slow = new Promise(resolve =>
+    setTimeout(() => resolve("Slow"), 1000)
+);
+
+Promise.race([fast, slow])
+    .then(result => console.log(result));
+
+// Output: Fast
+
+
+
+// ===============================
+// 34. Promise.allSettled()
+// ===============================
+
+// Waits for ALL promises to settle (resolve or reject)
+// Never rejects
+
+const p5 = Promise.resolve("Success");
+const p6 = Promise.reject("Failure");
+
+Promise.allSettled([p5, p6])
+    .then(results => {
+        console.log(results);
+    });
+
+// Output:
+// [
+//   { status: "fulfilled", value: "Success" },
+//   { status: "rejected", reason: "Failure" }
+// ]
+
+
+
+// ===============================
+// 35. Promise.any()
+// ===============================
+
+// Resolves with the FIRST fulfilled promise
+// Rejects only if ALL promises reject
+
+const p7 = Promise.reject("Error 1");
+const p8 = Promise.resolve("Winner");
+const p9 = Promise.reject("Error 2");
+
+Promise.any([p7, p8, p9])
+    .then(result => console.log(result))
+    .catch(error => console.log(error));
+
+// Output: Winner
+
+🔥 Real-World Usage
+Promise.all → multiple API calls in parallel
+Promise.race → timeout logic
+Promise.allSettled → show partial results
+Promise.any → fallback servers / fastest working API
+
+
+// ===============================
+// 36. DEBOUNCE
+// ===============================
+
+// Debounce ensures a function runs only AFTER
+// a certain delay has passed since the last call.
+
+function debounce(fn, delay) {
+    let timer;
+
+    return function (...args) {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+            fn.apply(this, args);
+        }, delay);
+    };
+}
+
+// Example:
+
+function search(query) {
+    console.log("Searching for:", query);
+}
+
+const debouncedSearch = debounce(search, 1000);
+
+debouncedSearch("A");
+debouncedSearch("Ar");
+debouncedSearch("Ary");
+debouncedSearch("Aryan");
+
+// Only the LAST call runs after 1 second
+
+Step 1: Call debouncedSearch("A")
+debouncedSearch("A");
+The returned function executes.
+clearTimeout(timer) → timer is undefined, so nothing happens.
+timer = setTimeout(...) → schedules a call to search("A") after 1000ms.
+State:
+timer → active timeout for 1000ms.
+Step 2: Call debouncedSearch("Ar") (before 1s)
+debouncedSearch("Ar");
+Function executes.
+clearTimeout(timer) → previous timer for search("A") is cancelled.
+timer = setTimeout(...) → new timeout for search("Ar") after 1000ms.
+State:
+search("A") → never runs
+timer → new active timeout for 1000ms
+Step 3: Call debouncedSearch("Ary") (again before 1s)
+debouncedSearch("Ary");
+Function executes.
+clearTimeout(timer) → previous timer for search("Ar") is cancelled.
+timer = setTimeout(...) → new timeout for search("Ary") after 1000ms.
+State:
+search("A") → never
+search("Ar") → never
+timer → active timeout for 1000ms
+Step 4: Call debouncedSearch("Aryan")
+debouncedSearch("Aryan");
+Function executes.
+clearTimeout(timer) → previous timer for search("Ary") is cancelled.
+timer = setTimeout(...) → new timeout for search("Aryan") after 1000ms.
+State:
+Only search("Aryan") is now scheduled.
+Step 5: Wait for 1 second
+No more calls are made.
+The last timer expires.
+search("Aryan") executes:
+Searching for: Aryan
+
+
+// ===============================
+// 37. THROTTLE
+// ===============================
+
+// Throttle ensures a function runs AT MOST
+// once every specified interval, no matter how many times it's called.
+
+function throttle(fn, interval) {
+    let lastTime = 0;
+
+    return function (...args) {
+        const now = Date.now();
+
+        if (now - lastTime >= interval) {
+            fn.apply(this, args);
+            lastTime = now;
+        }
+    };
+}
+
+// Example:
+
+function logScroll(event) {
+    console.log("Scroll event at:", Date.now());
+}
+
+const throttledScroll = throttle(logScroll, 1000);
+
+// If you attach to scroll event:
+window.addEventListener("scroll", throttledScroll);
+
+
+// ===============================
+// 38. CURRYING
+// ===============================
+
+// Currying is transforming a function
+// that takes multiple arguments into a sequence
+// of functions that each take a single argument.
+
+// Example: Normal function
+function add(a, b, c) {
+    return a + b + c;
+}
+
+console.log(add(2, 3, 4)); // 9
+
+
+// Curried version
+function curriedAdd(a) {
+    return function (b) {
+        return function (c) {
+            return a + b + c;
+        };
+    };
+}
+
+console.log(curriedAdd(2)(3)(4)); // 9
+
+// ===============================
+// 39. SHALLOW VS DEEP COPY
+// ===============================
+
+// 🔹 Shallow Copy
+// Copies only the first level of an object.
+// Nested objects are still references.
+
+const original = {
+    name: "Aryan",
+    skills: {
+        js: true,
+        react: true
+    }
+};
+
+// Using Object.assign
+const shallow1 = Object.assign({}, original);
+
+// Using spread operator
+const shallow2 = { ...original };
+
+shallow1.skills.js = false;
+console.log(original.skills.js); // false ✅ affected
+console.log(shallow2.skills.js); // false ✅ affected
+
+// Conclusion: Nested objects still share the same reference
+
+
+// 🔹 Deep Copy
+// Creates a completely independent clone of the object.
+
+const deepCopy = JSON.parse(JSON.stringify(original));
+deepCopy.skills.react = false;
+
+console.log(original.skills.react); // true ✅ original unaffected
+console.log(deepCopy.skills.react); // false ✅ cloned object changed
+
